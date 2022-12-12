@@ -97,3 +97,6 @@ class EndpointDontExist(ValueError):
 
 class NoPreferredBoardSet(RuntimeError):
     """No preferred board is set yet."""
+
+class UnsupportedMachineType(RuntimeError):
+    """The system's machine type is not supported."""

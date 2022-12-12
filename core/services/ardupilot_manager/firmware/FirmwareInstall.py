@@ -4,12 +4,12 @@ import pathlib
 import platform as system_platform
 import shutil
 import stat
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 from ardupilot_fw_decoder import BoardSubType, BoardType, Decoder
 from elftools.elf.elffile import ELFFile
 
-from exceptions import FirmwareInstallFail, InvalidFirmwareFile, UnsupportedPlatform
+from exceptions import FirmwareInstallFail, InvalidFirmwareFile, UnsupportedPlatform, UnsupportedMachineType
 from firmware.FirmwareDownload import FirmwareDownloader
 from firmware.FirmwareUpload import FirmwareUploader
 from typedefs import FirmwareFormat, FlightController, Platform, PlatformType
@@ -25,12 +25,14 @@ def get_board_id(platform: Platform) -> int:
     return ardupilot_board_ids.get(platform, -1)
 
 
-def get_correspondent_elf_arch(platform_arch: str) -> str:
-    correspondent_elf_archs = {
-        "x86_64": "x64",
-        "armv7l": "ARM",
+def get_supported_elf_archs(platform_arch: str) -> List[str]:
+    # mapping of Linux platform architecture names to ELF architecture names
+    supported_elf_archs = {
+        "x86_64": ["x64"],
+        "armv7l": ["ARM"],
+        "aarch64": ["AArch64", "ARM"]
     }
-    return correspondent_elf_archs.get(platform_arch, "")
+    return supported_elf_archs.get(platform_arch, [])
 
 
 def get_correspondent_decoder_platform(current_platform: Platform) -> Union[BoardType, BoardSubType]:
@@ -80,9 +82,14 @@ class FirmwareInstaller:
             except Exception as error:
                 raise InvalidFirmwareFile("Given file is not a valid ELF.") from error
         running_arch = system_platform.machine()
-        if firm_arch != get_correspondent_elf_arch(running_arch):
+        supported_elf_archs = get_supported_elf_archs(running_arch)
+        if len(supported_elf_archs) < 1:
+            raise UnsupportedMachineType(
+                f"Your system's platform architecture ({running_arch}) is not supported."
+            )
+        if firm_arch not in supported_elf_archs:
             raise InvalidFirmwareFile(
-                f"Firmware's architecture ({firm_arch}) does not match system's ({running_arch})."
+                f"Firmware's architecture ({firm_arch}) is not supported by your system's platform architecture ({running_arch})."
             )
 
         # Check if firmware's platform matches system platform
