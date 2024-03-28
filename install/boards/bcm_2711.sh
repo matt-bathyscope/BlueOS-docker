@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-echo "Configuring BCM27XX board (Raspberry Pi 4).."
+echo "Configuring BCM2711 board (Raspberry Pi 4).."
 
 VERSION="${VERSION:-master}"
 GITHUB_REPOSITORY=${GITHUB_REPOSITORY:-bluerobotics/blueos-docker}
